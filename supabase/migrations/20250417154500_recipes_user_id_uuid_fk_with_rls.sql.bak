@@ -1,0 +1,29 @@
+-- 1. Drop RLS policies referencing user_id on recipes
+do $$
+begin
+    -- Drop all policies on recipes (adjust if you want to keep others)
+    EXECUTE (
+        SELECT string_agg('DROP POLICY IF EXISTS "' || policyname || '" ON recipes;', ' ')
+        FROM pg_policies
+        WHERE tablename = 'recipes'
+    );
+end $$;
+
+-- 2. Alter user_id column to UUID
+drop index if exists recipes_user_id_idx;
+ALTER TABLE recipes ALTER COLUMN user_id TYPE UUID USING user_id::uuid;
+
+-- 3. Add foreign key from recipes.user_id to user_profiles.id
+ALTER TABLE recipes ADD CONSTRAINT fk_recipes_user_id_uuid FOREIGN KEY (user_id) REFERENCES user_profiles(id);
+
+-- 4. Recreate RLS policies (adjust as needed)
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+
+-- Example: Allow all authenticated users to select any recipe
+CREATE POLICY "Allow select for all" ON recipes FOR SELECT TO authenticated USING (true);
+
+-- Example: Allow insert/update/delete only for owner
+CREATE POLICY "Allow modify own" ON recipes FOR ALL TO authenticated USING (user_id = auth.uid()::uuid) WITH CHECK (user_id = auth.uid()::uuid);
+
+-- 5. Recreate index for user_id
+CREATE INDEX recipes_user_id_idx ON recipes(user_id);
