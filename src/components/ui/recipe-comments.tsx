@@ -13,7 +13,7 @@ interface RecipeCommentsProps {
 }
 
 export function RecipeComments({
-  comments,
+  comments = [],
   onAddComment,
   isAuthenticated,
 }: RecipeCommentsProps) {
@@ -86,7 +86,7 @@ export function RecipeComments({
       )}
 
       <div className="space-y-6">
-        {comments.map(({ comment, user }) => (
+        {(Array.isArray(comments) ? comments : []).map(({ comment, user }) => (
           <div key={comment.id} className="flex space-x-4">
             <Image
               src={user.image_url || '/placeholder-avatar.jpg'}

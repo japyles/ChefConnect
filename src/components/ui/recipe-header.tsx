@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 interface RecipeHeaderProps {
   recipe: TablesRow<'recipes'> & {
-    author: TablesRow<'profiles'>
+    user: TablesRow<'user_profiles'>
     _count?: { favorites: number }
   }
   isOwner: boolean
@@ -54,15 +54,15 @@ export function RecipeHeader({
           <div className="mb-4 flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <Image
-                src={recipe.author.image_url || '/placeholder-avatar.jpg'}
-                alt={recipe.author.name}
+                src={recipe.user?.avatar_url || '/placeholder-avatar.jpg'}
+                alt={recipe.user?.full_name || 'User'}
                 width={40}
                 height={40}
                 className="rounded-full"
               />
               <div>
                 <p className="text-sm font-medium text-gray-900">
-                  {recipe.author.name}
+                  {recipe.user?.full_name || 'User'}
                 </p>
                 <p className="text-sm text-gray-500">
                   {new Date(recipe.created_at).toLocaleDateString()}

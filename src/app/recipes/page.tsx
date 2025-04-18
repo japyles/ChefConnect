@@ -98,14 +98,14 @@ export default function RecipesPage() {
             <RecipeSearch />
           </div>
         </div>
-        <div className='flex w-full gap-8'>
+        <div className='flex gap-8'>
                   {/* Filters and Results */}
-        <div className="w-1/3">
+        <div className="w-1/2">
         <RecipeFilters />
           </div>
 
 {/* Recipe Grid */}
-<div className="py-8 w-2/3">
+<div className="py-8 w-1/2">
   {loading ? (
     <div className="flex h-64 items-center justify-center">
       <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
@@ -120,7 +120,7 @@ export default function RecipesPage() {
       </p>
     </div>
   ) : (
-    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
       {recipes.map((recipe) => (
         <RecipeCard key={recipe.id} recipe={recipe} />
       ))}

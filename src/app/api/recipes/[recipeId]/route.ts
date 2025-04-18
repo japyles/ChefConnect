@@ -69,29 +69,24 @@ export async function PATCH(
   }
 }
 
-export async function DELETE(
-  req: Request,
-  { params }: { params: { recipeId: string } }
-) {
-  const session = await auth()
+// DELETE: Only allow owner to delete their recipe
+export async function DELETE(req: Request, { params }: { params: { recipeId: string } }) {
+  const session = await auth();
   if (!session.userId) {
-    return new NextResponse('Unauthorized', { status: 401 })
+    return new NextResponse('Unauthorized', { status: 401 });
   }
-
-  const supabase = createClient()
-
+  const supabase = await createClient();
   try {
+    // Only delete if the recipe belongs to the current user
     const { error } = await supabase
       .from('recipes')
       .delete()
       .eq('id', params.recipeId)
-      .eq('user_id', session.userId)
-
-    if (error) throw error
-
-    return new NextResponse(null, { status: 204 })
+      .eq('user_id', session.userId);
+    if (error) throw error;
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
-    console.error('Error deleting recipe:', error)
-    return new NextResponse('Internal Server Error', { status: 500 })
+    console.error('Error deleting recipe:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }

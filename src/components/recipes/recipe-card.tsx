@@ -2,6 +2,7 @@
 
 import { Clock, Heart, Star, User2 } from 'lucide-react'
 import Link from 'next/link'
+import { useAuth } from '@clerk/nextjs'
 
 interface Recipe {
   id: string
@@ -26,7 +27,20 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
+  const { userId } = useAuth();
   const primaryPhoto = recipe.photos?.find((p) => p.is_primary)?.photo_url
+  const isOwner = userId && recipe.user?.id === userId
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!window.confirm('Are you sure you want to delete this recipe?')) return;
+    const res = await fetch(`/api/recipes/${recipe.id}`, { method: 'DELETE' });
+    if (res.ok) {
+      window.location.reload();
+    } else {
+      alert('Failed to delete recipe.');
+    }
+  };
 
   return (
     <Link
@@ -50,9 +64,20 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
 
       {/* Recipe Info */}
       <div className="p-4">
-        <h3 className="font-medium text-gray-900 group-hover:text-blue-600">
-          {recipe.title}
-        </h3>
+        <div className="flex justify-between items-start">
+          <h3 className="font-medium text-gray-900 group-hover:text-blue-600">
+            {recipe.title}
+          </h3>
+          {isOwner && (
+            <button
+              onClick={handleDelete}
+              className="ml-2 rounded bg-red-100 px-2 py-1 text-xs text-red-700 hover:bg-red-200"
+              title="Delete Recipe"
+            >
+              Delete
+            </button>
+          )}
+        </div>
         {recipe.description && (
           <p className="mt-1 text-sm text-gray-500 line-clamp-2">
             {recipe.description}
