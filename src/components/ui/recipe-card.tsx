@@ -18,12 +18,14 @@ interface RecipeCardProps {
 }
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
-  // Use recipe_photos from API response (not photos)
-  const primaryPhotoPath = recipe.recipe_photos?.find((p: { photo_url: string; is_primary: boolean }) => p.is_primary)?.photo_url
-  if (typeof window !== 'undefined') {
-    console.log('RecipeCard primaryPhotoPath:', primaryPhotoPath, 'recipe:', recipe);
-  }
+  // Try both possible photo arrays for compatibility
+  const photos = recipe.recipe_photos || recipe.photos || [];
+  const primaryPhotoPath = photos.find((p: any) => p.is_primary)?.photo_url;
   const primaryPhoto = primaryPhotoPath ? getRecipeImageUrl(primaryPhotoPath) : '/placeholder-recipe.jpg'
+
+  if (typeof window !== 'undefined') {
+    console.log('[RecipeCard] recipe:', recipe);
+  }
 
   return (
     <Link

@@ -35,7 +35,10 @@ export async function GET(req: Request, { params }: { params: { userId: string }
     // Now use the UUID to query recipes
     const { data: recipes, error } = await supabase
       .from('recipes')
-      .select('*')
+      .select(`
+        *,
+        recipe_photos(id, photo_url, is_primary)
+      `)
       .eq('user_id', userProfileUuid);
 
     if (error) {

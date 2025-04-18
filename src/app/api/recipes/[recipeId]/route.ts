@@ -19,6 +19,7 @@ export async function GET(
       .from('recipes')
       .select(`
         *,
+        photos:recipe_photos(photo_url, is_primary),
         user:user_profiles(id, full_name, avatar_url),
         tags:recipe_tags!fk_recipe_tags_recipe_id(
           tags:tags!fk_recipe_tags_tag_id(name)

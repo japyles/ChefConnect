@@ -2,6 +2,7 @@ import { TablesRow } from '@/lib/db/types'
 import { Clock, Heart, Share2, Users } from 'lucide-react'
 import Image from 'next/image'
 import { useState } from 'react'
+import { getRecipeImageUrl } from '@/lib/supabase-image'
 
 interface RecipeHeaderProps {
   recipe: TablesRow<'recipes'> & {
@@ -19,6 +20,10 @@ export function RecipeHeader({
   onFavoriteToggle,
   isFavorited,
 }: RecipeHeaderProps) {
+  if (typeof window !== 'undefined') {
+    console.log('[RecipeHeader] recipe:', recipe);
+  }
+
   const [isSharing, setIsSharing] = useState(false)
 
   const handleShare = async () => {
@@ -40,13 +45,22 @@ export function RecipeHeader({
       <div className="flex flex-col lg:flex-row">
         {/* Recipe Image */}
         <div className="relative aspect-video w-full lg:w-2/3">
-          <Image
-            src={recipe.photos?.[0]?.photo_url || '/placeholder-recipe.jpg'}
-            alt={recipe.title}
-            fill
-            className="object-cover"
-            priority
-          />
+          {/* Use the same logic as recipe-card for the main image */}
+          {(() => {
+            // Try both possible photo arrays for compatibility
+            const photos = recipe.recipe_photos || recipe.photos || [];
+            const primaryPhotoPath = photos.find((p: any) => p.is_primary)?.photo_url;
+            const primaryPhoto = primaryPhotoPath ? getRecipeImageUrl(primaryPhotoPath) : '/placeholder-recipe.jpg';
+            return (
+              <Image
+                src={primaryPhoto}
+                alt={recipe.title}
+                fill
+                className="object-cover"
+                priority
+              />
+            );
+          })()}
         </div>
 
         {/* Recipe Info */}
