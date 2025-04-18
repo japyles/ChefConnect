@@ -1,9 +1,0 @@
--- Add foreign key from recipes.user_id to user_profiles.user_id
-ALTER TABLE recipes
-ADD CONSTRAINT fk_recipes_user_id
-FOREIGN KEY (user_id) REFERENCES user_profiles(user_id);
-
--- Add foreign key from recipe_tags.tag_id to tags.id
-ALTER TABLE recipe_tags
-ADD CONSTRAINT fk_recipe_tags_tag_id
-FOREIGN KEY (tag_id) REFERENCES tags(id);

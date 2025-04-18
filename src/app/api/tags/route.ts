@@ -6,7 +6,7 @@ export async function GET(request: NextRequest) {
     const supabase = await createAdminClient();
     const { data: tags, error } = await supabase
       .from('tags')
-      .select(`*, recipe_count:recipe_tags(count)`)
+      .select(`*, recipe_count:recipe_tags!fk_recipe_tags_tag_id(count)`)
       .order('name')
 
     if (error) throw error

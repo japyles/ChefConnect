@@ -345,7 +345,7 @@ export function EnhancedProfile() {
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">Dietary Preferences</h2>
           <div className="flex flex-wrap gap-2">
-            {profile.dietary_preferences.map((pref) => (
+            {(profile.dietary_preferences ?? []).map((pref) => (
               <span
                 key={pref}
                 className="rounded-full bg-green-100 px-3 py-1 text-sm font-medium text-green-800"
@@ -360,7 +360,7 @@ export function EnhancedProfile() {
         <div className="rounded-xl bg-white p-6 shadow-sm">
           <h2 className="mb-4 text-lg font-semibold">Favorite Cuisines</h2>
           <div className="flex flex-wrap gap-2">
-            {profile.favorite_cuisines.map((cuisine) => (
+            {(profile.favorite_cuisines ?? []).map((cuisine) => (
               <span
                 key={cuisine}
                 className="rounded-full bg-orange-100 px-3 py-1 text-sm font-medium text-orange-800"

@@ -38,6 +38,7 @@ export default function RecipesPage() {
   const searchParams = useSearchParams()
   const [results, setResults] = useState<SearchResults | null>(null)
   const [loading, setLoading] = useState(true)
+  const [recipes, setRecipes] = useState<Recipe[]>([])
 
   useEffect(() => {
     const fetchRecipes = async () => {
@@ -49,10 +50,20 @@ export default function RecipesPage() {
         if (response.ok) {
           const data = await response.json()
           console.log('Fetched recipes data:', data)
-          setResults(data)
+          if (Array.isArray(data)) {
+            setRecipes(data)
+            setResults(null)
+          } else if (data && Array.isArray(data.recipes)) {
+            setRecipes(data.recipes)
+            setResults(data)
+          } else {
+            setRecipes([])
+            setResults(null)
+          }
         }
       } catch (error) {
         console.error('Error fetching recipes:', error)
+        setRecipes([])
       } finally {
         setLoading(false)
       }
@@ -87,67 +98,71 @@ export default function RecipesPage() {
             <RecipeSearch />
           </div>
         </div>
-
-        {/* Filters and Results */}
+        <div className='flex w-full gap-8'>
+                  {/* Filters and Results */}
+        <div className="w-1/3">
         <RecipeFilters />
+          </div>
 
-        {/* Recipe Grid */}
-        <div className="py-8">
-          {loading ? (
-            <div className="flex h-64 items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-            </div>
-          ) : results?.recipes.length === 0 ? (
-            <div className="flex h-64 flex-col items-center justify-center text-center">
-              <p className="text-lg font-medium text-gray-900">
-                No recipes found
-              </p>
-              <p className="mt-1 text-sm text-gray-500">
-                Try adjusting your search or filters
-              </p>
-            </div>
-          ) : (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {results?.recipes.map((recipe) => (
-                <RecipeCard key={recipe.id} recipe={recipe} />
-              ))}
-            </div>
-          )}
+{/* Recipe Grid */}
+<div className="py-8 w-2/3">
+  {loading ? (
+    <div className="flex h-64 items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+    </div>
+  ) : recipes.length === 0 ? (
+    <div className="flex h-64 flex-col items-center justify-center text-center">
+      <p className="text-lg font-medium text-gray-900">
+        No recipes found
+      </p>
+      <p className="mt-1 text-sm text-gray-500">
+        Try adjusting your search or filters
+      </p>
+    </div>
+  ) : (
+    <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {recipes.map((recipe) => (
+        <RecipeCard key={recipe.id} recipe={recipe} />
+      ))}
+    </div>
+  )}
 
-          {/* Pagination */}
-          {results && results.totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center space-x-2">
-              {Array.from({ length: results.totalPages }).map((_, i) => {
-                const page = i + 1
-                const isActive = page === results.page
+  {/* Pagination */}
+  {results && results.totalPages > 1 && (
+    <div className="mt-8 flex items-center justify-center space-x-2">
+      {Array.from({ length: results.totalPages }).map((_, i) => {
+        const page = i + 1
+        const isActive = page === results.page
 
-                return (
-                  <button
-                    key={page}
-                    onClick={() => {
-                      const params = new URLSearchParams(
-                        searchParams.toString()
-                      )
-                      params.set('page', page.toString())
-                      window.history.pushState(
-                        null,
-                        '',
-                        '?' + params.toString()
-                      )
-                    }}
-                    className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                      isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-900 hover:bg-gray-100'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+        return (
+          <button
+            key={page}
+            onClick={() => {
+              const params = new URLSearchParams(
+                searchParams.toString()
+              )
+              params.set('page', page.toString())
+              window.history.pushState(
+                null,
+                '',
+                '?' + params.toString()
+              )
+            }}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
+              isActive
+                ? 'bg-blue-600 text-white'
+                : 'text-gray-900 hover:bg-gray-100'
+            }`}
+          >
+            {page}
+          </button>
+        )
+      })}
+    </div>
+  )}
+</div>
         </div>
+
       </div>
     </div>
   )

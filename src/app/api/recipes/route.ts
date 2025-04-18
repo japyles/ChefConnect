@@ -2,6 +2,26 @@ import { auth } from '@clerk/nextjs';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
+// Ensures that a user_profiles row exists for the current Clerk user
+async function ensureUserProfile(supabase: any, userId: string) {
+  // Try to upsert the profile (insert if not exists, update otherwise)
+  const { error } = await supabase
+    .from('user_profiles')
+    .upsert(
+      {
+        user_id: userId,
+        // Optionally set more fields like full_name, avatar_url, etc.
+        // full_name: ...,
+      },
+      { onConflict: 'user_id' }
+    );
+  if (error) {
+    console.error('Error ensuring user profile:', error);
+    return false;
+  }
+  return true;
+}
+
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
@@ -17,6 +37,22 @@ export async function POST(req: Request) {
 
     // Get Supabase admin client
     const supabase = await createAdminClient();
+    // Ensure user profile exists
+await ensureUserProfile(supabase, userId);
+
+    // Look up the user's profile UUID
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .eq('user_id', userId)
+      .single();
+
+    if (profileError || !profile) {
+      console.error('Could not find user profile for Clerk user id:', userId, profileError);
+      return new NextResponse('User profile not found', { status: 400 });
+    }
+
+    const userProfileUuid = profile.id;
 
     // Insert the recipe into Supabase
     const { data: recipe, error } = await supabase
@@ -29,7 +65,7 @@ export async function POST(req: Request) {
           instructions: data.instructions,
           cook_time: data.cookingTime,
           servings: data.servings,
-          user_id: userId,
+          user_id: userProfileUuid,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         },
@@ -78,9 +114,9 @@ export async function GET() {
       .select(`
         *,
         photos:recipe_photos(photo_url, is_primary),
-        author:user_profiles(id, full_name, avatar_url),
-        tags:recipe_tags(
-          tags(name)
+        user:user_profiles(id, full_name, avatar_url),
+        tags:recipe_tags!fk_recipe_tags_recipe_id(
+          tags:tags!fk_recipe_tags_tag_id(name)
         )
       `)
       .order('created_at', { ascending: false });
@@ -90,7 +126,7 @@ export async function GET() {
       return new NextResponse(`Failed to fetch recipes: ${error.message}`, { status: 500 });
     }
 
-    return NextResponse.json({ recipes });
+    return NextResponse.json(recipes);
   } catch (error: any) {
     console.error('[RECIPES][GET]', error);
     return new NextResponse(`Internal Error: ${error.message}`, { status: 500 });

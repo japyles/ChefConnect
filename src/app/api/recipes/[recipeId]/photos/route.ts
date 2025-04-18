@@ -2,6 +2,20 @@ import { auth } from '@clerk/nextjs';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 
+// Helper to get the user's UUID from user_profiles
+async function getUserProfileUuid(supabase: any, userId: string) {
+  const { data: profile, error } = await supabase
+    .from('user_profiles')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+  if (error || !profile) {
+    console.error('Could not find user profile for Clerk user id:', userId, error);
+    return null;
+  }
+  return profile.id;
+}
+
 export async function POST(
   req: Request,
   { params }: { params: { recipeId: string } }
@@ -20,13 +34,19 @@ export async function POST(
     const supabase = await createAdminClient();
     console.log('Supabase client created:', !!supabase);
 
+    // Get the user's UUID from user_profiles
+    const userProfileUuid = await getUserProfileUuid(supabase, userId);
+    if (!userProfileUuid) {
+      return new NextResponse('User profile not found', { status: 400 });
+    }
+
     try {
       // Verify recipe exists and belongs to user
       const { data: recipe, error: recipeError } = await supabase
         .from('recipes')
         .select('id')
         .eq('id', params.recipeId)
-        .eq('user_id', userId)
+        .eq('user_id', userProfileUuid)
         .single();
 
       if (recipeError) {

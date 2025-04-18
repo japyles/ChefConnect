@@ -1,6 +1,20 @@
 -- Ensure recipes.user_id is UUID and references user_profiles.id
+-- 1. Drop all RLS policies on recipes (explicitly, by name)
+DROP POLICY IF EXISTS "Allow users to read all recipes" ON recipes;
+DROP POLICY IF EXISTS "Allow users to insert their own recipes" ON recipes;
+DROP POLICY IF EXISTS "Allow users to update their own recipes" ON recipes;
+DROP POLICY IF EXISTS "Allow users to delete their own recipes" ON recipes;
+
+-- 2. Alter user_id column to UUID
 ALTER TABLE recipes
   ALTER COLUMN user_id TYPE UUID USING user_id::uuid;
+
+-- 3. Recreate RLS policies for recipes
+ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow users to read all recipes" ON recipes FOR SELECT TO authenticated USING (true);
+CREATE POLICY "Allow users to insert their own recipes" ON recipes FOR INSERT TO authenticated WITH CHECK (user_id = auth.uid()::uuid);
+CREATE POLICY "Allow users to update their own recipes" ON recipes FOR UPDATE TO authenticated USING (user_id = auth.uid()::uuid);
+CREATE POLICY "Allow users to delete their own recipes" ON recipes FOR DELETE TO authenticated USING (user_id = auth.uid()::uuid);
 
 DO $$
 BEGIN

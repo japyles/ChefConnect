@@ -11,22 +11,28 @@ export async function GET(
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   try {
+    console.log('Fetching recipe with ID:', params.recipeId)
     const { data: recipe, error } = await supabase
       .from('recipes')
       .select(`
         *,
-        user:profiles(name, avatar_url),
-        likes(count),
-        comments(count),
-        ratings(rating)
+        user:user_profiles(id, full_name, avatar_url),
+        tags:recipe_tags!fk_recipe_tags_recipe_id(
+          tags:tags!fk_recipe_tags_tag_id(name)
+        )
       `)
       .eq('id', params.recipeId)
       .single()
 
+    console.log('Supabase recipe query result:', recipe, error)
+
     if (error) throw error
+    if (!recipe) {
+      return new NextResponse('Recipe not found', { status: 404 })
+    }
 
     return NextResponse.json(recipe)
   } catch (error) {
