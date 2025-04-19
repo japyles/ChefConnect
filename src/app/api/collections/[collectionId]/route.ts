@@ -11,7 +11,7 @@ export async function GET(
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   try {
     const { data: collection, error } = await supabase
@@ -51,7 +51,7 @@ export async function PATCH(
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
   const body = await req.json()
 
   try {
@@ -79,7 +79,7 @@ export async function DELETE(
     return new NextResponse('Unauthorized', { status: 401 })
   }
 
-  const supabase = createClient()
+  const supabase = await createClient()
 
   try {
     const { error } = await supabase

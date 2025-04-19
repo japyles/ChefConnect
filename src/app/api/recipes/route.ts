@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { z } from 'zod';
 
 // Ensures that a user_profiles row exists for the current Clerk user
 async function ensureUserProfile(supabase: any, userId: string) {
@@ -22,6 +23,18 @@ async function ensureUserProfile(supabase: any, userId: string) {
   return true;
 }
 
+const recipeSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  description: z.string().optional(),
+  ingredients: z.array(z.string()).min(1, 'At least one ingredient is required'),
+  instructions: z.array(z.string()).min(1, 'At least one instruction is required'),
+  cookingTime: z.number().min(1, 'Cooking time is required'),
+  servings: z.number().min(1, 'Number of servings is required'),
+  tags: z.array(z.string()),
+  status: z.enum(['published', 'draft']).default('published'),
+  collection_ids: z.array(z.string()).optional(),
+});
+
 export const runtime = 'nodejs';
 
 export async function POST(req: Request) {
@@ -35,10 +48,13 @@ export async function POST(req: Request) {
     console.log('Received recipe data:', data);
     console.log('User ID:', userId);
 
+    // Validate recipe data
+    const parsedData = recipeSchema.parse(data);
+
     // Get Supabase admin client
     const supabase = await createAdminClient();
     // Ensure user profile exists
-await ensureUserProfile(supabase, userId);
+    await ensureUserProfile(supabase, userId);
 
     // Look up the user's profile UUID
     const { data: profile, error: profileError } = await supabase
@@ -59,12 +75,13 @@ await ensureUserProfile(supabase, userId);
       .from('recipes')
       .insert([
         {
-          title: data.title,
-          description: data.description,
-          ingredients: data.ingredients,
-          instructions: data.instructions,
-          cook_time: data.cookingTime,
-          servings: data.servings,
+          title: parsedData.title,
+          description: parsedData.description,
+          ingredients: parsedData.ingredients,
+          instructions: parsedData.instructions,
+          cook_time: parsedData.cookingTime,
+          servings: parsedData.servings,
+          status: parsedData.status || 'published',
           user_id: userProfileUuid,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -83,8 +100,8 @@ await ensureUserProfile(supabase, userId);
     }
 
     // Assign to collections if collection_ids are provided
-    if (Array.isArray(data.collection_ids) && data.collection_ids.length > 0) {
-      const inserts = data.collection_ids.map((collection_id: string) => ({
+    if (Array.isArray(parsedData.collection_ids) && parsedData.collection_ids.length > 0) {
+      const inserts = parsedData.collection_ids.map((collection_id: string) => ({
         recipe_id: recipe.id,
         collection_id,
         created_at: new Date().toISOString()

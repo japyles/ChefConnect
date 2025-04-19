@@ -1,6 +1,7 @@
 'use client'
 
 import { RecipeComments } from '@/components/ui/recipe-comments'
+import { RecipeForm } from '@/components/ui/recipe-form/recipe-form'
 import { RecipeHeader } from '@/components/ui/recipe-header'
 import { RecipeIngredients } from '@/components/ui/recipe-ingredients'
 import { RecipeInstructions } from '@/components/ui/recipe-instructions'
@@ -29,6 +30,7 @@ export default function RecipeDetailPage() {
   const [isFavorited, setIsFavorited] = useState(false)
   const [servings, setServings] = useState(0)
   const [variations, setVariations] = useState<Variation[]>([])
+  const [editing, setEditing] = useState(false)
 
   const fetchRecipe = useCallback(async () => {
     try {
@@ -134,51 +136,91 @@ export default function RecipeDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <RecipeHeader
-          recipe={recipe}
-          isOwner={userId === recipe.user_id}
-          onFavoriteToggle={handleFavoriteToggle}
-          isFavorited={isFavorited}
-        />
-
-        <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <RecipeIngredients
-              ingredients={recipe.ingredients as string[]}
-              servings={servings}
-              onServingsChange={setServings}
-            />
-          </div>
-
-          <div className="space-y-8 lg:col-span-2">
-            <RecipeInstructions
-              instructions={recipe.instructions as string[]}
-              photos={recipe.photos}
-            />
-            <div className="mt-8">
-              <RecipeComments
-                recipeId={recipe.id}
-                comments={recipe.comments}
-                onAddComment={handleAddComment}
-                isAuthenticated={!!isSignedIn}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <RecipeNotes recipeId={recipe.id} isOwner={userId === recipe.user_id} />
-          </div>
-
-          <div className="space-y-8">
-            <RecipeVariations
-              recipeId={recipe.id}
-              variations={variations}
+        {editing ? (
+          <RecipeForm
+            initialData={{
+              id: recipe.id,
+              title: recipe.title,
+              description: recipe.description,
+              ingredients: recipe.ingredients,
+              instructions: recipe.instructions,
+              cookingTime: recipe.cook_time,
+              servings: recipe.servings,
+              tags: recipe.tags || [],
+              photos: recipe.photos || [],
+              status: recipe.status,
+            }}
+            isEdit
+            submitLabel="Save Changes"
+            onSubmit={async (data) => {
+              await fetch(`/api/recipes/${recipe.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+              })
+              setEditing(false)
+              fetchRecipe()
+            }}
+            onDelete={async () => {
+              if (confirm('Are you sure you want to delete this recipe?')) {
+                await fetch(`/api/recipes/${recipe.id}`, { method: 'DELETE' })
+                router.push('/profile')
+              }
+            }}
+          />
+        ) : (
+          <>
+            <RecipeHeader
+              recipe={recipe}
               isOwner={userId === recipe.user_id}
+              onFavoriteToggle={handleFavoriteToggle}
+              isFavorited={isFavorited}
             />
-          </div>
-        </div>
+            {userId === recipe.user_id && (
+              <button
+                className="mt-4 mb-8 rounded bg-yellow-500 px-4 py-2 text-white hover:bg-yellow-600"
+                onClick={() => setEditing(true)}
+              >
+                Edit Recipe
+              </button>
+            )}
+            <div className="mt-8 grid gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-1">
+                <RecipeIngredients
+                  ingredients={recipe.ingredients as string[]}
+                  servings={servings}
+                  onServingsChange={setServings}
+                />
+              </div>
+              <div className="space-y-8 lg:col-span-2">
+                <RecipeInstructions
+                  instructions={recipe.instructions as string[]}
+                  photos={recipe.photos}
+                />
+                <div className="mt-8">
+                  <RecipeComments
+                    recipeId={recipe.id}
+                    comments={recipe.comments}
+                    onAddComment={handleAddComment}
+                    isAuthenticated={!!isSignedIn}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="mt-8 grid gap-8 lg:grid-cols-3">
+              <div className="lg:col-span-2">
+                <RecipeNotes recipeId={recipe.id} isOwner={userId === recipe.user_id} />
+              </div>
+              <div className="space-y-8">
+                <RecipeVariations
+                  recipeId={recipe.id}
+                  variations={variations}
+                  isOwner={userId === recipe.user_id}
+                />
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )

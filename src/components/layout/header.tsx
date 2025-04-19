@@ -1,7 +1,7 @@
 'use client'
 
 import { SignInButton, UserButton, useUser } from '@clerk/nextjs'
-import { Home, FolderHeart, PlusCircle } from 'lucide-react'
+import { Home, FolderHeart, PlusCircle, IdCard } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button'
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
   { name: 'Collections', href: '/collections', icon: FolderHeart },
-  { name: 'Recipes', href: '/recipes', icon: PlusCircle },
+  { name: 'Recipes', href: '/recipes', icon: IdCard },
 ]
 
 export function Header() {

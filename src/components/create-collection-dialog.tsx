@@ -4,19 +4,37 @@ import { useState } from "react";
 interface CreateCollectionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onCollectionCreated?: () => void;
 }
 
 export function CreateCollectionDialog({
   open,
   onOpenChange,
+  onCollectionCreated,
 }: CreateCollectionDialogProps) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement collection creation
-    onOpenChange(false);
+    if (!name.trim()) return;
+    try {
+      const res = await fetch('/api/collections', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description }),
+      });
+      if (!res.ok) {
+        const errorText = await res.text();
+        alert('Failed to create collection: ' + errorText);
+      } else {
+        onOpenChange(false);
+        if (onCollectionCreated) onCollectionCreated();
+      }
+    } catch (err) {
+      alert('An error occurred while creating the collection.');
+      console.error(err);
+    }
   };
 
   return (

@@ -2,38 +2,37 @@
 
 import { useUser } from "@clerk/nextjs";
 import { PlusCircle } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CollectionCard } from "@/components/collection-card";
 import { CreateCollectionDialog } from "@/components/create-collection-dialog";
-
-// Temporary mock data
-const mockCollections = [
-  {
-    id: "1",
-    name: "Favorite Recipes",
-    description: "My all-time favorite recipes",
-    recipeCount: 12,
-    coverImage: "/images/recipes/pasta.jpg",
-  },
-  {
-    id: "2",
-    name: "Healthy Meals",
-    description: "Nutritious and delicious recipes",
-    recipeCount: 8,
-    coverImage: "/images/recipes/salad.jpg",
-  },
-  {
-    id: "3",
-    name: "Quick Dinners",
-    description: "30-minute meals for busy days",
-    recipeCount: 15,
-    coverImage: "/images/recipes/soba.jpg",
-  },
-];
 
 export default function CollectionsPage() {
   const { user } = useUser();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [collections, setCollections] = useState<any[]>([]);
+
+  async function fetchCollections() {
+    try {
+      const res = await fetch("/api/collections");
+      const data = await res.json();
+      setCollections(
+        (data || []).map((c: any) => ({
+          id: c.id,
+          name: c.name,
+          description: c.description || '',
+          recipeCount: c.recipe_count || 0,
+          coverImage: c.cover_image || '/images/recipes/placeholder.jpg',
+        }))
+      );
+    } catch (e) {
+      setCollections([]);
+    }
+  }
+
+  useEffect(() => {
+    fetchCollections();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -49,7 +48,7 @@ export default function CollectionsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {mockCollections.map((collection) => (
+        {collections.map((collection) => (
           <CollectionCard key={collection.id} {...collection} />
         ))}
       </div>
@@ -57,6 +56,7 @@ export default function CollectionsPage() {
       <CreateCollectionDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
+        onCollectionCreated={fetchCollections}
       />
     </div>
   );

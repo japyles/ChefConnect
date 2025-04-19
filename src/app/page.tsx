@@ -3,20 +3,39 @@
 import { RecipeCard } from "@/components/recipe-card";
 import { RecipeFilters } from "@/components/recipe-filters";
 import { SearchBar } from "@/components/search-bar";
-import { useFilteredRecipes } from "@/hooks/useFilteredRecipes";
 import { Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Recipe } from "@/store/recipes";
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(true);
-  const filteredRecipes = useFilteredRecipes();
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
+    async function fetchRecipes() {
+      setIsLoading(true);
+      try {
+        const res = await fetch("/api/recipes");
+        const data = await res.json();
+        setRecipes(
+          data.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            image: r.photos && r.photos.length > 0 ? r.photos[0].photo_url : "/images/recipes/placeholder.jpg",
+            author: r.user?.full_name || "Unknown",
+            mealType: r.meal_type || "",
+            diet: r.dietary_preferences || [],
+            time: r.cook_time ? (r.cook_time < 30 ? "Quick" : "Long") : "",
+            type: r.tags?.map((t: any) => t.tags?.name) || [],
+          }))
+        );
+      } catch (e) {
+        setRecipes([]);
+      }
       setIsLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
+    }
+    fetchRecipes();
   }, []);
 
   return (
@@ -40,12 +59,12 @@ export default function Home() {
         ) : (
           <motion.div layout>
             <AnimatePresence mode="popLayout">
-              {filteredRecipes.length > 0 ? (
+              {recipes.length > 0 ? (
                 <motion.div
                   layout
                   className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
                 >
-                  {filteredRecipes.map((recipe) => (
+                  {recipes.map((recipe) => (
                     <RecipeCard
                       key={recipe.id}
                       id={recipe.id}

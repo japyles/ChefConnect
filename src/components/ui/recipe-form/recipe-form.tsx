@@ -17,6 +17,7 @@ const recipeSchema = z.object({
   cookingTime: z.number().min(1, 'Cooking time is required'),
   servings: z.number().min(1, 'Number of servings is required'),
   tags: z.array(z.string()),
+  status: z.enum(['published', 'draft']).default('published'),
 })
 
 export type RecipeFormData = z.infer<typeof recipeSchema>
@@ -32,12 +33,16 @@ interface RecipeFormProps {
   }
   onSubmit: (data: RecipeFormData & { images: Array<{ url: string; stepNumber?: number }>, collection_ids: string[] }) => Promise<void>
   submitLabel?: string
+  isEdit?: boolean
+  onDelete?: () => Promise<void>
 }
 
 export function RecipeForm({
   initialData,
   onSubmit,
   submitLabel = 'Create Recipe',
+  isEdit = false,
+  onDelete,
 }: RecipeFormProps) {
   const router = useRouter()
   const [images, setImages] = useState<Array<{ url: string; stepNumber?: number }>>(
@@ -49,6 +54,7 @@ export function RecipeForm({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [collections, setCollections] = useState<Array<{ id: string; name: string }>>([])
   const [selectedCollections, setSelectedCollections] = useState<string[]>([])
+  const [status, setStatus] = useState<'published' | 'draft'>(initialData?.status || 'published')
 
   useEffect(() => {
     // Fetch collections for the user
@@ -72,16 +78,14 @@ export function RecipeForm({
       tags: initialData?.tags || [],
       cookingTime: initialData?.cookingTime || 30,
       servings: initialData?.servings || 4,
+      status: initialData?.status || 'published',
     },
   })
 
-  const handleSubmit = async (data: RecipeFormData) => {
+  const handleSubmit = async (values: RecipeFormData) => {
     setIsSubmitting(true)
     try {
-      await onSubmit({ ...data, images, collection_ids: selectedCollections })
-    } catch (error) {
-      console.error('Error submitting recipe:', error)
-      // Handle error (show toast, etc.)
+      await onSubmit({ ...values, status, images, collection_ids: selectedCollections })
     } finally {
       setIsSubmitting(false)
     }
@@ -214,14 +218,33 @@ export function RecipeForm({
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {isSubmitting ? 'Saving...' : submitLabel}
-            </button>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className="rounded bg-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-400"
+                onClick={() => setStatus('draft')}
+                disabled={isSubmitting}
+              >
+                Save as Draft
+              </button>
+              <button
+                type="submit"
+                className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
+                disabled={isSubmitting}
+              >
+                {submitLabel}
+              </button>
+              {isEdit && onDelete && (
+                <button
+                  type="button"
+                  className="rounded bg-red-600 px-4 py-2 text-white hover:bg-red-700 ml-2"
+                  onClick={onDelete}
+                  disabled={isSubmitting}
+                >
+                  Delete
+                </button>
+              )}
+            </div>
           </div>
         </form>
       </FormProvider>
